@@ -7,9 +7,8 @@ export type HistoricalRevlog = {
     rating: Rating | -1
 }
 
-export type MemorizedCard = {
-    fsrs: FSRS,
-    card: Card
+export type HistoricalCard = {
+    fsrs: FSRS
 }
 
 export type DefaultExportData = {
@@ -24,7 +23,7 @@ export type RangeBounds = {
 const day_ms = 1000 * 60 * 60 * 24
 export function historicalFSRS(
     revlogs: HistoricalRevlog[],
-    cards: Record<number, MemorizedCard>,
+    cards: Record<number, HistoricalCard>,
     end = new Date(Date.now()),
     rollover_ms = 0,
     /* reviewRangeHook: (stability: number, card: MemorizedCard, range: RangeBounds) => void */
@@ -62,7 +61,7 @@ export function historicalFSRS(
         }*/ /* Todo */
 
         // on forget
-        if (revlog.rating == -1 && !new_card) {
+        if (grade == -1 && !new_card) {
             card = fsrs.forget(card, now).card
             historicalCards[revlog.cid] = card
             // Forget Hook Todo
