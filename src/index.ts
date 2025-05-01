@@ -25,7 +25,7 @@ const day_ms = 1000 * 60 * 60 * 24
 export function historicalFSRS(
     revlogs: HistoricalRevlog[],
     cards: Record<number, MemorizedCard>,
-    end: Date,
+    end = new Date(Date.now()),
     rollover_ms = 0,
     /* reviewRangeHook: (stability: number, card: MemorizedCard, range: RangeBounds) => void */
 ) {
