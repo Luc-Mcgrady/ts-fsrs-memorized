@@ -1,0 +1,26 @@
+{
+  "name": "ts-fsrs-memorized",
+  "version": "1.0.0",
+  "description": "Allows you to gain insights from an FSRS review history.",
+  "repository": {
+    "type": "git",
+    "url": "yes"
+  },
+  "license": "MIT",
+  "author": "Luc McGrady",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "prepare": "npm run build",
+    "build": "rollup -c"
+  },
+  "devDependencies": {
+    "rollup": "^4.40.1",
+    "rollup-plugin-dts": "^6.2.1",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "ts-fsrs": "^4.7.1"
+  }
+}
