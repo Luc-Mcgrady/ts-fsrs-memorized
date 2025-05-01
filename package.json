@@ -27,6 +27,6 @@
     "lodash-es": "^4.17.21"
   },
   "peerDependencies": {
-    "ts-fsrs": "^4.7.1"
+    "ts-fsrs": "^4.6.0"
   }
 }
