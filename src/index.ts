@@ -1,21 +1,17 @@
 import { FSRS, FSRSVersion, Card, Rating, createEmptyCard, FSRSState, dateDiffInDays, ReviewLog } from "ts-fsrs"
 import * as _ from "lodash-es"
 
-export type HistoricalReviewLog = {
+export interface HistoricalReviewLog {
     cid: number
     review: Date
     rating: Rating | -1
 }
 
-export type HistoricalCard = {
+export interface HistoricalCard {
     fsrs: FSRS
 }
 
-export type DefaultExportData = {
-    retrievability: number[]
-}
-
-export type RangeBounds = {
+export interface RangeBounds {
     from: number,
     to: number
 }
@@ -28,57 +24,70 @@ export function ConvertReviewLogForHistorical(log: ReviewLog, cid: number): Hist
     }
 }
 
+export type historicalFSRSHooks = Partial<{
+    reviewRangeHook: (stability: number, card: Card, range: RangeBounds) => void
+    forgetHook: (cid: number, card: Card) => void
+    dayEndHook: (cards: Record<number, Card>, stabilities: Record<number, number>) => void
+}>
+
 const day_ms = 1000 * 60 * 60 * 24
 export function historicalFSRS(
     revlogs: HistoricalReviewLog[],
     cards: Record<number, HistoricalCard>,
     end = new Date(Date.now()),
     rollover_ms = 0,
-    /* reviewRangeHook: (stability: number, card: MemorizedCard, range: RangeBounds) => void */
+    hooks: historicalFSRSHooks = {}
 ) {
     console.log(`ts-fsrs ${FSRSVersion}`)
 
     let historicalCards: Record<number, Card> = {}
     let dayFromTime = (time: Date) => { return Math.floor((time.getTime() - rollover_ms) / day_ms) }
     const end_day = dayFromTime(end)
+    const {
+        reviewRangeHook = _.noop,
+        forgetHook = _.noop,
+        dayEndHook = _.noop,
+    }: historicalFSRSHooks = hooks
 
     let sumR = <number[]>[]
 
-    function forgetting_curve(fsrs: FSRS, stability: number, range: RangeBounds, /* card: Card */) {
+    function forgetting_curve(fsrs: FSRS, stability: number, range: RangeBounds, card: Card) {
         for (const day of _.range(range.from, range.to)) {
             const retrievability = fsrs.forgetting_curve(day - range.from, stability)
             sumR[day] = (sumR[day] || 0) + retrievability
         }
+        reviewRangeHook(stability, card, range)
     }
 
     let last_stability = <number[]>[]
+    const start_day = dayFromTime(revlogs[0].review)
+    /** The day that a card was reviewed previously, before this review. Used for dayEndHook. */
+    let last_day = start_day
 
     for (const revlog of revlogs) {
-
         const grade = revlog.rating
         const new_card = !historicalCards[revlog.cid]
         const now = revlog.review
+        const today = dayFromTime(now)
         const fsrs = cards[revlog.cid].fsrs
-        //console.log({fsrs})
         let card = historicalCards[revlog.cid] ?? createEmptyCard(new Date(revlog.cid))
 
-        /*for (let day = last_day; day < dayFromMs(revlog.id); day++) {
-            const stabilities = Object.values(last_stability)
-            day_medians[day] = d3.quantile(stabilities, 0.5) ?? 0
-            day_means[day] = d3.mean(stabilities) ?? 0
-        }*/ /* Todo */
+        for (let day = last_day; day < today; day++) {
+            dayEndHook(historicalCards, last_stability)
+        } 
+        last_day = today
 
         // on forget
         if (grade == -1 && !new_card) {
             card = fsrs.forget(card, now).card
             historicalCards[revlog.cid] = card
+            forgetHook(revlog.cid, card)
             continue
-            // Forget Hook Todo
         }
         if (last_stability[revlog.cid]) {
             const previous = dayFromTime(card.last_review!)
             const stability = last_stability[revlog.cid]
-            forgetting_curve(fsrs, stability, { from: previous, to: dayFromTime(revlog.review) }, /* card */)
+            forgetting_curve(fsrs, stability, { from: previous, to: dayFromTime(revlog.review) }, card)
         }
 
         //console.log(grade)
@@ -110,7 +119,7 @@ export function historicalFSRS(
         const num_cid = +cid
         const previous = dayFromTime(card.last_review!)
         const fsrs = cards[num_cid].fsrs
-        forgetting_curve(fsrs, last_stability[num_cid], { from: previous, to: end_day + 1 }, /* card */)
+        forgetting_curve(fsrs, last_stability[num_cid], { from: previous, to: end_day + 1 }, card )
     }
 
     return {
