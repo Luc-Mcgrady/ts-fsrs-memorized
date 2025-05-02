@@ -64,6 +64,7 @@ export function historicalFSRS(
         if (grade == -1 && !new_card) {
             card = fsrs.forget(card, now).card
             historicalCards[revlog.cid] = card
+            continue
             // Forget Hook Todo
         }
         if (last_stability[revlog.cid]) {
