@@ -8,7 +8,7 @@
   },
   "license": "MIT",
   "author": "Luc McGrady",
-  "type": "module",
+  "type": "commonjs",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -27,6 +27,6 @@
     "lodash-es": "^4.17.21"
   },
   "peerDependencies": {
-    "ts-fsrs": "^4.6.0"
+    "ts-fsrs": ">=4.6.0"
   }
 }
