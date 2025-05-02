@@ -1,9 +1,9 @@
-import { FSRS, FSRSVersion, Card, Rating, createEmptyCard, FSRSState, dateDiffInDays } from "ts-fsrs"
+import { FSRS, FSRSVersion, Card, Rating, createEmptyCard, FSRSState, dateDiffInDays, ReviewLog } from "ts-fsrs"
 import * as _ from "lodash-es"
 
-export type HistoricalRevlog = {
+export type HistoricalReviewLog = {
     cid: number
-    time: Date
+    review: Date
     rating: Rating | -1
 }
 
@@ -20,9 +20,17 @@ export type RangeBounds = {
     to: number
 }
 
+export function ConvertReviewLogForHistorical(log: ReviewLog, cid: number): HistoricalReviewLog {
+    return {
+        cid,
+        review: log.review,
+        rating: log.rating
+    }
+}
+
 const day_ms = 1000 * 60 * 60 * 24
 export function historicalFSRS(
-    revlogs: HistoricalRevlog[],
+    revlogs: HistoricalReviewLog[],
     cards: Record<number, HistoricalCard>,
     end = new Date(Date.now()),
     rollover_ms = 0,
@@ -49,7 +57,7 @@ export function historicalFSRS(
 
         const grade = revlog.rating
         const new_card = !historicalCards[revlog.cid]
-        const now = revlog.time
+        const now = revlog.review
         const fsrs = cards[revlog.cid].fsrs
         //console.log({fsrs})
         let card = historicalCards[revlog.cid] ?? createEmptyCard(new Date(revlog.cid))
@@ -70,7 +78,7 @@ export function historicalFSRS(
         if (last_stability[revlog.cid]) {
             const previous = dayFromTime(card.last_review!)
             const stability = last_stability[revlog.cid]
-            forgetting_curve(fsrs, stability, { from: previous, to: dayFromTime(revlog.time) }, /* card */)
+            forgetting_curve(fsrs, stability, { from: previous, to: dayFromTime(revlog.review) }, /* card */)
         }
 
         //console.log(grade)
