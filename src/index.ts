@@ -44,13 +44,17 @@ export function ConvertReviewLogForHistorical(
 export type HistoricalFSRSHooks = Partial<{
     /**
      *
-     * @param stability
-     * @param card
-     * @param range
-     * @returns
+     * @param stability The stability of the card. Unlike card.stability ignores "forget"
+     * @param card The card that was reviewed on range.to
+     * @param range The range in days between card.last_review and the current review
      */
     reviewRangeHook: (stability: number, card: Card, range: RangeBounds) => void
     forgetHook: (cid: number, card: Card) => void
+    /**
+     * Called whenever a day ends
+     * @param cards The states of all the cards on the given day
+     * @param stabilities The stabilities of all the cards on the given day. Unlike card.stability ignores "forget"
+     */
     dayEndHook: (
         cards: Record<number, Card>,
         stabilities: Record<number, number>
