@@ -43,11 +43,11 @@ export function ConvertReviewLogForHistorical(
 
 export type HistoricalFSRSHooks = Partial<{
     /**
-     * 
-     * @param stability 
-     * @param card 
-     * @param range 
-     * @returns 
+     *
+     * @param stability
+     * @param card
+     * @param range
+     * @returns
      */
     reviewRangeHook: (stability: number, card: Card, range: RangeBounds) => void
     forgetHook: (cid: number, card: Card) => void
@@ -63,25 +63,25 @@ export interface HistoricalFSRSReturn {
     /**
      * The sum of the retrivabilities of cards for the given date
      */
-    historicalRetention: number[],
+    historicalRetention: number[]
     /**
      * The cards indexed by cid in the state they are when the simulation finishes.
      */
-    ResultantCards: Record<number, Card>,
+    ResultantCards: Record<number, Card>
 }
 
 /**
- * 
+ *
  * @param reviewLogs A list of review logs; processed to extract the relevant data
  * @param fsrs Either an FSRS instance or a mapping of cid's to FSRS instances which should be used for the respective cards.
  * @param rollover_ms The number of ms after midnight on which a new "day" is considered to start
  * @param end The day on which to end the simulation, The start will be the first day on which a review was done.
  * @param hooks Functions which can be used to extract extra information if wanted
- * @returns see {@link HistoricalFSRSReturn} 
- * 
+ * @returns see {@link HistoricalFSRSReturn}
+ *
  * @example
  * // From the Anki add-on "Search Stats Extended"
- * 
+ *
  * let historicalRevlogs = revlogs
  *   .filter((revlog) => {
  *     return !(
@@ -97,7 +97,7 @@ export interface HistoricalFSRSReturn {
  *       cid: revlog.cid,
  *     };
  *   });
- * 
+ *
  * let presetFsrs = _.mapValues(
  *   configs,
  *   (config) =>
@@ -108,10 +108,10 @@ export interface HistoricalFSRSReturn {
  *       })
  *     )
  * );
- * 
+ *
  * let fsrs = Object.fromEntries(
  *   cards.map((card) => [card.id, presetFsrs[config_mapping[card.did]]])
- * 
+ *
  * let { historicalRetention } = historicalFSRS(historicalRevlogs, fsrs);
  */
 export function historicalFSRS(
@@ -120,7 +120,7 @@ export function historicalFSRS(
     rollover_ms = 0,
     end = new Date(Date.now()),
     hooks: HistoricalFSRSHooks = {}
-):HistoricalFSRSReturn {
+): HistoricalFSRSReturn {
     console.log(`ts-fsrs ${FSRSVersion}`)
 
     let historicalCards: Record<number, Card> = {}
@@ -147,7 +147,8 @@ export function historicalFSRS(
                 day - range.from,
                 stability
             )
-            historicalRetention[day] = (historicalRetention[day] || 0) + retrievability
+            historicalRetention[day] =
+                (historicalRetention[day] || 0) + retrievability
         }
         reviewRangeHook(stability, card, range)
     }
@@ -160,8 +161,7 @@ export function historicalFSRS(
     function getFSRS(cid: number) {
         if (fsrs instanceof FSRS) {
             return fsrs
-        }
-        else return fsrs[cid]
+        } else return fsrs[cid]
     }
 
     for (const revlog of reviewLogs) {
@@ -179,10 +179,12 @@ export function historicalFSRS(
         last_day = today
 
         // on forget
-        if (grade == -1 && !newCard) {
-            card = fsrs.forget(card, now).card
-            historicalCards[revlog.cid] = card
-            forgetHook(revlog.cid, card)
+        if (grade == -1) {
+            if (!newCard) {
+                card = fsrs.forget(card, now).card
+                historicalCards[revlog.cid] = card
+                forgetHook(revlog.cid, card)
+            }
             continue
         }
         if (lastStabilities[revlog.cid]) {
