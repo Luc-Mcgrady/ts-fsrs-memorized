@@ -16,10 +16,6 @@ export interface HistoricalReviewLog {
     rating: Rating | -1
 }
 
-export interface HistoricalCard {
-    fsrs: FSRS
-}
-
 export interface RangeBounds {
     from: number
     to: number
@@ -48,7 +44,7 @@ export type historicalFSRSHooks = Partial<{
 const day_ms = 1000 * 60 * 60 * 24
 export function historicalFSRS(
     revlogs: HistoricalReviewLog[],
-    cards: Record<number, HistoricalCard>,
+    fsrs: Record<number, FSRS> | FSRS,
     end = new Date(Date.now()),
     rollover_ms = 0,
     hooks: historicalFSRSHooks = {}
@@ -89,12 +85,19 @@ export function historicalFSRS(
     /** The day that a card was reviewed previously, before this review. Used for dayEndHook. */
     let last_day = start_day
 
+    function getFSRS(cid: number) {
+        if (fsrs instanceof FSRS) {
+            return fsrs
+        }
+        else return fsrs[cid]
+    }
+
     for (const revlog of revlogs) {
         const grade = revlog.rating
         const new_card = !historicalCards[revlog.cid]
         const now = revlog.review
         const today = dayFromTime(now)
-        const fsrs = cards[revlog.cid].fsrs
+        const fsrs = getFSRS(revlog.cid)
         let card =
             historicalCards[revlog.cid] ?? createEmptyCard(new Date(revlog.cid))
 
@@ -149,7 +152,7 @@ export function historicalFSRS(
     for (const [cid, card] of Object.entries(historicalCards)) {
         const num_cid = +cid
         const previous = dayFromTime(card.last_review!)
-        const fsrs = cards[num_cid].fsrs
+        const fsrs = getFSRS(num_cid)
         forgetting_curve(
             fsrs,
             last_stability[num_cid],
