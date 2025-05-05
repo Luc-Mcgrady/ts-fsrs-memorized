@@ -1,7 +1,7 @@
 {
   "name": "ts-fsrs-memorized",
   "version": "0.0.0",
-  "description": "Allows you to gain insights from an FSRS review history.",
+  "description": "Allows you to process an FSRS review history into a progression of the number of cards they have memorized in the past",
   "repository": {
     "type": "git",
     "url": "yes"
