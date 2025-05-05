@@ -11,8 +11,17 @@ import {
 import * as _ from "lodash-es"
 
 export interface HistoricalReviewLog {
+    /**
+     * A unique identifier for the card
+     */
     cid: number
+    /**
+     * The time at which a review was transacted
+     */
     review: Date
+    /**
+     * -1 for forgotten cards
+     */
     rating: Rating | -1
 }
 
@@ -33,6 +42,13 @@ export function ConvertReviewLogForHistorical(
 }
 
 export type HistoricalFSRSHooks = Partial<{
+    /**
+     * 
+     * @param stability 
+     * @param card 
+     * @param range 
+     * @returns 
+     */
     reviewRangeHook: (stability: number, card: Card, range: RangeBounds) => void
     forgetHook: (cid: number, card: Card) => void
     dayEndHook: (
@@ -42,13 +58,69 @@ export type HistoricalFSRSHooks = Partial<{
 }>
 
 const day_ms = 1000 * 60 * 60 * 24
+
+export interface HistoricalFSRSReturn {
+    /**
+     * The sum of the retrivabilities of cards for the given date
+     */
+    historicalRetention: number[],
+    /**
+     * The cards indexed by cid in the state they are when the simulation finishes.
+     */
+    ResultantCards: Record<number, Card>,
+}
+
+/**
+ * 
+ * @param reviewLogs A list of review logs; processed to extract the relevant data
+ * @param fsrs Either an FSRS instance or a mapping of cid's to FSRS instances which should be used for the respective cards.
+ * @param rollover_ms The number of ms after midnight on which a new "day" is considered to start
+ * @param end The day on which to end the simulation, The start will be the first day on which a review was done.
+ * @param hooks Functions which can be used to extract extra information if wanted
+ * @returns see {@link HistoricalFSRSReturn} 
+ * 
+ * @example
+ * // From the Anki add-on "Search Stats Extended"
+ * 
+ * let historicalRevlogs = revlogs
+ *   .filter((revlog) => {
+ *     return !(
+ *       (revlog.ease === 0 && revlog.ivl !== 0) ||
+ *       (revlog.type === 3 && revlog.time === 0)
+ *     );
+ *   })
+ *   .map((revlog) => {
+ *     const rating = revlog.ease !== 0 ? revlog.ease : -1;
+ *     return {
+ *       rating,
+ *       review: new Date(revlog.id),
+ *       cid: revlog.cid,
+ *     };
+ *   });
+ * 
+ * let presetFsrs = _.mapValues(
+ *   configs,
+ *   (config) =>
+ *     new FSRS(
+ *       generatorParameters({
+ *         enable_short_term: true,
+ *         w: config.fsrsParams5 ? config.fsrsParams5 : config.fsrsWeights,
+ *       })
+ *     )
+ * );
+ * 
+ * let fsrs = Object.fromEntries(
+ *   cards.map((card) => [card.id, presetFsrs[config_mapping[card.did]]])
+ * 
+ * let { historicalRetention } = historicalFSRS(historicalRevlogs, fsrs);
+ */
 export function historicalFSRS(
-    revlogs: HistoricalReviewLog[],
+    reviewLogs: HistoricalReviewLog[],
     fsrs: Record<number, FSRS> | FSRS,
-    end = new Date(Date.now()),
     rollover_ms = 0,
+    end = new Date(Date.now()),
     hooks: HistoricalFSRSHooks = {}
-) {
+):HistoricalFSRSReturn {
     console.log(`ts-fsrs ${FSRSVersion}`)
 
     let historicalCards: Record<number, Card> = {}
@@ -81,7 +153,7 @@ export function historicalFSRS(
     }
 
     let lastStabilities = <number[]>[]
-    const start_day = dayFromTime(revlogs[0].review)
+    const start_day = dayFromTime(reviewLogs[0].review)
     /** The day that a card was reviewed previously, before this review. Used for dayEndHook. */
     let last_day = start_day
 
@@ -92,7 +164,7 @@ export function historicalFSRS(
         else return fsrs[cid]
     }
 
-    for (const revlog of revlogs) {
+    for (const revlog of reviewLogs) {
         const grade = revlog.rating
         const newCard = !historicalCards[revlog.cid]
         const now = revlog.review
