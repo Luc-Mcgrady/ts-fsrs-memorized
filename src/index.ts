@@ -32,7 +32,7 @@ export function ConvertReviewLogForHistorical(
     }
 }
 
-export type historicalFSRSHooks = Partial<{
+export type HistoricalFSRSHooks = Partial<{
     reviewRangeHook: (stability: number, card: Card, range: RangeBounds) => void
     forgetHook: (cid: number, card: Card) => void
     dayEndHook: (
@@ -47,7 +47,7 @@ export function historicalFSRS(
     fsrs: Record<number, FSRS> | FSRS,
     end = new Date(Date.now()),
     rollover_ms = 0,
-    hooks: historicalFSRSHooks = {}
+    hooks: HistoricalFSRSHooks = {}
 ) {
     console.log(`ts-fsrs ${FSRSVersion}`)
 
@@ -60,9 +60,9 @@ export function historicalFSRS(
         reviewRangeHook = _.noop,
         forgetHook = _.noop,
         dayEndHook = _.noop,
-    }: historicalFSRSHooks = hooks
+    }: HistoricalFSRSHooks = hooks
 
-    let sumR = <number[]>[]
+    let historicalRetention = <number[]>[]
 
     function forgetting_curve(
         fsrs: FSRS,
@@ -75,12 +75,12 @@ export function historicalFSRS(
                 day - range.from,
                 stability
             )
-            sumR[day] = (sumR[day] || 0) + retrievability
+            historicalRetention[day] = (historicalRetention[day] || 0) + retrievability
         }
         reviewRangeHook(stability, card, range)
     }
 
-    let last_stability = <number[]>[]
+    let lastStabilities = <number[]>[]
     const start_day = dayFromTime(revlogs[0].review)
     /** The day that a card was reviewed previously, before this review. Used for dayEndHook. */
     let last_day = start_day
@@ -94,7 +94,7 @@ export function historicalFSRS(
 
     for (const revlog of revlogs) {
         const grade = revlog.rating
-        const new_card = !historicalCards[revlog.cid]
+        const newCard = !historicalCards[revlog.cid]
         const now = revlog.review
         const today = dayFromTime(now)
         const fsrs = getFSRS(revlog.cid)
@@ -102,20 +102,20 @@ export function historicalFSRS(
             historicalCards[revlog.cid] ?? createEmptyCard(new Date(revlog.cid))
 
         for (let day = last_day; day < today; day++) {
-            dayEndHook(historicalCards, last_stability)
+            dayEndHook(historicalCards, lastStabilities)
         }
         last_day = today
 
         // on forget
-        if (grade == -1 && !new_card) {
+        if (grade == -1 && !newCard) {
             card = fsrs.forget(card, now).card
             historicalCards[revlog.cid] = card
             forgetHook(revlog.cid, card)
             continue
         }
-        if (last_stability[revlog.cid]) {
+        if (lastStabilities[revlog.cid]) {
             const previous = dayFromTime(card.last_review!)
-            const stability = last_stability[revlog.cid]
+            const stability = lastStabilities[revlog.cid]
             forgetting_curve(
                 fsrs,
                 stability,
@@ -144,7 +144,7 @@ export function historicalFSRS(
         card.last_review = now
         card.stability = newState.stability
         card.difficulty = newState.difficulty
-        last_stability[revlog.cid] = card.stability // To prevent "forget" affecting the forgetting curve
+        lastStabilities[revlog.cid] = card.stability // To prevent "forget" affecting the forgetting curve
 
         historicalCards[revlog.cid] = card
     }
@@ -155,14 +155,14 @@ export function historicalFSRS(
         const fsrs = getFSRS(num_cid)
         forgetting_curve(
             fsrs,
-            last_stability[num_cid],
+            lastStabilities[num_cid],
             { from: previous, to: end_day + 1 },
             card
         )
     }
 
     return {
-        sumR,
-        re_simulated_cards: historicalCards,
+        historicalRetention,
+        ResultantCards: historicalCards,
     }
 }
