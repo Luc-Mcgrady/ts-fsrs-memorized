@@ -1,4 +1,4 @@
-import { Card, createEmptyCard, FSRS, Rating } from "ts-fsrs"
+import { Card, createEmptyCard, dateDiffInDays, FSRS, Rating } from "ts-fsrs"
 import { historicalFSRS, HistoricalReviewLog } from "../src"
 
 describe("Historical Memorised", () => {
@@ -7,18 +7,26 @@ describe("Historical Memorised", () => {
         let now = new Date()
         let review2 = now
         review2.setDate(review2.getDate() + 5)
+        let review3 = now
+        review2.setDate(review2.getDate() + 20)
 
         let revlog: HistoricalReviewLog[] = [
-            { cid: 1, rating: 3, review: now },
-            { cid: 1, rating: 3, review: review2 },
+            { cid: 1, rating: Rating.Good, review: now },
+            { cid: 1, rating: Rating.Good, review: review2 },
+            { cid: 1, rating: Rating.Good, review: review3 },
         ]
-        let card = createEmptyCard(now)
+        let card = { stability: 0, difficulty: 0 }
 
         historicalFSRS([...revlog], f, 40000, review2, {
-            onReviewRange(stability) {
-                let repeat = f.repeat(card, now)[Rating.Good]
-                let s = repeat.card.stability
-                card = repeat.card
+            onReview(r, b, { stability }) {
+                card = f.next_state(
+                    b,
+                    b.last_review
+                        ? dateDiffInDays(b.last_review, r.review)
+                        : 0,
+                    r.rating
+                )
+                let s = card.stability
                 expect(s).toBe(stability)
             },
         })
