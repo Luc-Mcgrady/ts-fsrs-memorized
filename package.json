@@ -13,7 +13,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "prepare": "npm run build",
-    "format": "prettier --write src/",
+    "format": "prettier --write src/ __tests__/",
     "build": "rollup -c",
     "test": "jest"
   },
