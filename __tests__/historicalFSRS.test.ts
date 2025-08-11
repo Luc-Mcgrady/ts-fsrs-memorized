@@ -21,9 +21,7 @@ describe("Historical Memorised", () => {
             onReview(r, b, { stability }) {
                 card = f.next_state(
                     b,
-                    b.last_review
-                        ? dateDiffInDays(b.last_review, r.review)
-                        : 0,
+                    b.last_review ? dateDiffInDays(b.last_review, r.review) : 0,
                     r.rating
                 )
                 let s = card.stability
