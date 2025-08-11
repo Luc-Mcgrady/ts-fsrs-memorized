@@ -48,11 +48,16 @@ export type HistoricalFSRSHooks = Partial<{
      * @param card The card that was reviewed on range.to
      * @param range The range in days between card.last_review and the current review
      */
-    onReview: (
+    onReviewRange: (
         stability: number,
         card: Card,
         range: RangeBounds,
         cid: number
+    ) => void
+    onReview: (
+        revlog: HistoricalReviewLog,
+        before_card: Card,
+        after_state: FSRSState
     ) => void
     onForget: (cid: number, card: Card) => void
     /**
@@ -138,7 +143,8 @@ export function historicalFSRS(
     }
     const end_day = dayFromTime(end)
     const {
-        onReview: reviewRangeHook = _.noop,
+        onReviewRange: reviewRangeHook = _.noop,
+        onReview: onReview = _.noop,
         onForget: forgetHook = _.noop,
         onDayEnd: dayEndHook = _.noop,
     }: HistoricalFSRSHooks = hooks
@@ -226,6 +232,7 @@ export function historicalFSRS(
             elapsed = dateDiffInDays(oldDate, newDate)
         }
         const newState = fsrs.next_state(memoryState, elapsed, grade)
+        onReview(revlog, card, newState)
         card.last_review = now
         card.stability = newState.stability
         card.difficulty = newState.difficulty
