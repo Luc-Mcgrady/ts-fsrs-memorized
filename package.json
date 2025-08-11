@@ -14,14 +14,18 @@
   "scripts": {
     "prepare": "npm run build",
     "format": "prettier --write src/",
-    "build": "rollup -c"
+    "build": "rollup -c",
+    "test": "jest"
   },
   "devDependencies": {
     "@rollup/plugin-typescript": "^12.1.2",
+    "@types/jest": "^30.0.0",
     "@types/lodash-es": "^4.17.12",
+    "jest": "^30.0.5",
     "prettier": "^3.5.3",
     "rollup": "^4.40.1",
     "rollup-plugin-dts": "^6.2.1",
+    "ts-jest": "^29.4.1",
     "tslib": "^2.8.1",
     "typescript": "^5.8.3"
   },
