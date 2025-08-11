@@ -15,7 +15,7 @@ describe("Historical Memorised", () => {
         let card = createEmptyCard(now)
 
         historicalFSRS([...revlog], f, 40000, review2, {
-            reviewRangeHook(stability) {
+            onReview(stability) {
                 let repeat = f.repeat(card, now)[3]
                 let s = repeat.card.stability
                 card = repeat.card

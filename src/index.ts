@@ -48,14 +48,19 @@ export type HistoricalFSRSHooks = Partial<{
      * @param card The card that was reviewed on range.to
      * @param range The range in days between card.last_review and the current review
      */
-    reviewRangeHook: (stability: number, card: Card, range: RangeBounds) => void
-    forgetHook: (cid: number, card: Card) => void
+    onReview: (
+        stability: number,
+        card: Card,
+        range: RangeBounds,
+        cid: number
+    ) => void
+    onForget: (cid: number, card: Card) => void
     /**
      * Called whenever a day ends
      * @param cards The states of all the cards on the given day
      * @param stabilities The stabilities of all the cards on the given day. Unlike card.stability ignores "forget"
      */
-    dayEndHook: (
+    onDayEnd: (
         cards: Record<number, Card>,
         stabilities: Record<number, number>
     ) => void
@@ -133,9 +138,9 @@ export function historicalFSRS(
     }
     const end_day = dayFromTime(end)
     const {
-        reviewRangeHook = _.noop,
-        forgetHook = _.noop,
-        dayEndHook = _.noop,
+        onReview: reviewRangeHook = _.noop,
+        onForget: forgetHook = _.noop,
+        onDayEnd: dayEndHook = _.noop,
     }: HistoricalFSRSHooks = hooks
 
     let historicalRetention = <number[]>[]
@@ -144,7 +149,8 @@ export function historicalFSRS(
         fsrs: FSRS,
         stability: number,
         range: RangeBounds,
-        card: Card
+        card: Card,
+        cid: number
     ) {
         for (const day of _.range(range.from, range.to)) {
             const retrievability = fsrs.forgetting_curve(
@@ -154,7 +160,7 @@ export function historicalFSRS(
             historicalRetention[day] =
                 (historicalRetention[day] || 0) + retrievability
         }
-        reviewRangeHook(stability, card, range)
+        reviewRangeHook(stability, card, range, cid)
     }
 
     let lastStabilities = <number[]>[]
@@ -198,7 +204,8 @@ export function historicalFSRS(
                 fsrs,
                 stability,
                 { from: previous, to: dayFromTime(revlog.review) },
-                card
+                card,
+                revlog.cid
             )
         }
 
@@ -235,7 +242,8 @@ export function historicalFSRS(
             fsrs,
             lastStabilities[num_cid],
             { from: previous, to: end_day + 1 },
-            card
+            card,
+            +cid
         )
     }
 
