@@ -20,7 +20,7 @@
   "devDependencies": {
     "@rollup/plugin-typescript": "^12.1.2",
     "@types/jest": "^30.0.0",
-    "@types/lodash-es": "^4.17.12",
+    "@types/lodash": "^4.17.20",
     "jest": "^30.0.5",
     "prettier": "^3.5.3",
     "rollup": "^4.40.1",
@@ -30,7 +30,7 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "lodash-es": "^4.17.21"
+    "lodash": "^4.17.21"
   },
   "peerDependencies": {
     "ts-fsrs": ">=4.6.0"

@@ -8,7 +8,7 @@ import {
     dateDiffInDays,
     ReviewLog,
 } from "ts-fsrs"
-import * as _ from "lodash-es"
+import * as _ from "lodash"
 
 export interface HistoricalReviewLog {
     /**

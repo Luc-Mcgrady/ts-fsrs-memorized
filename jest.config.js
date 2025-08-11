@@ -9,4 +9,7 @@ module.exports = {
   transform: {
     '^.+\\.(ts|tsx)$': 'ts-jest',
   },
+  transformIgnorePatterns: [
+    'node_modules/(?!(lodash-es)/)', // <-- allow lodash-es to be transformed
+  ],
 };
